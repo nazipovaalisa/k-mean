@@ -1,16 +1,13 @@
 import math
+import numpy as np
 
 
 class point:
 
-    def __init__(self, name, x, y):
+    def __init__(self, name: str, coords: np.array([])):
         self.name = name
-        self.x = x
-        self.y = y
+        self.coords = coords
 
     def distance(self, e):
-        return math.sqrt((self.x - e.x)**2 + (self.y - e.y)**2)
+        return np.linalg.norm(self.coords - e.coords)
 
-
-    def equal(self, e):
-        return self.x == e.x and self.y == e.y
