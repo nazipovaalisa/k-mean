@@ -24,6 +24,7 @@ def main():
     for name in names:  # заполняем список точек
         points.append(point(name, df[name].values))
 
+    e_list = []
     for i in range(k):  # заполняем список центров
         t = rnd.randint(0, len(points) - 1)
         while contains(points[t], e):
@@ -31,34 +32,38 @@ def main():
         e.append(point(
             str(f'e{i + 1}'), points[t].coords
         ))
-        clusters[i] = [points[t]]
+        clusters[i] = []
+        e_list.append([])
 
     e_coords = np.array([e])
     clusters_list = []
+    e_dict = {0: copy.deepcopy(e_list)}
 
     flag = False
     t = 0
     while not flag:
         temp = copy.deepcopy(clusters)
+        for i in range(len(e)):
+            e_list[i].clear()
         if t > 0:
             for key in clusters.keys():
                 clusters[key].clear()  #чистим кластеры
         for i in range(len(points)):  #заполняем кластеры
-            # пропускаем точки, которые уже добавлены в кластеры
-            if not any([contains(points[i], clusters[key]) for key in clusters.keys()]):
-                d_min = points[i].distance(e[0])  # расстояние до центра
-                index_min = 0
-                for j in range(k):
-                    if d_min > points[i].distance(e[j]):
-                        d_min = points[i].distance(e[j])
-                        index_min = j
-                clusters[index_min].append(points[i])
-                if v == 2:
-                    e_new = point(e[index_min].name, np.array([]))
-                    for j in range(e[index_min].coords.size):
-                        e_new.coords = np.append(e_new.coords, np.average([points[i].coords[j],
-                                                                           e[index_min].coords[j]]))
-                    e[index_min] = e_new
+            d_min = points[i].distance(e[0])  # расстояние до центра
+            index_min = 0
+            for j in range(k):
+                if d_min > points[i].distance(e[j]):
+                    d_min = points[i].distance(e[j])
+                    index_min = j
+            clusters[index_min].append(points[i])
+            if v == 2:
+                e_new = point(e[index_min].name, np.array([]))
+                for j in range(e[index_min].coords.size):
+                    e_new.coords = np.append(e_new.coords, np.average([points[i].coords[j],
+                                                                       e[index_min].coords[j]]))
+                e[index_min] = e_new
+                e_list[index_min].append(e_new)
+        e_dict[t+1] = copy.deepcopy(e_list)
         if v == 1:
             for i in range(len(e)):  # пересчет центров
                 e[i] = change_center(e[i], clusters[i])
@@ -85,9 +90,21 @@ def main():
                         ax.scatter(x=[p.coords[0] for p in clusters_list[n-1][key]],
                                    y=[p.coords[1] for p in clusters_list[n-1][key]],)
                         ax.set(title=f'{n} итерация')
-                ax.scatter(x=[p.coords[0] for p in e_coords[n]], y=[p.coords[1] for p in e_coords[n]], color='black')
-
+                    if v == 2:
+                        for i in range(len(e)):
+                            ax.scatter(x=[p.coords[0] for p in e_coords[n-1]], y=[p.coords[1] for p in e_coords[n-1]],
+                                       color='black')
+                            ax.scatter(
+                                [p.coords[0] for p in e_dict[n][i]],
+                                [p.coords[1] for p in e_dict[n][i]], color='black'
+                            )
+                            ax.plot(
+                                [p.coords[0] for p in e_dict[n][i]],
+                                [p.coords[1] for p in e_dict[n][i]], color='black'
+                            )
                 ax.grid()
+                ax.scatter(x=[p.coords[0] for p in e_coords[n]], y=[p.coords[1] for p in e_coords[n]], color='red',
+                           s=100)
                 for p in points:
                     ax.text(p.coords[0]+0.1, p.coords[1], p.name)
                 n += 1
